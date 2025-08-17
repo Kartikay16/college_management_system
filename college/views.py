@@ -3,6 +3,7 @@ from django.http import JsonResponse
 from .forms import ProfessorForm,CourseForm, StudentForm, Student_CourseForm
 from .models import Student, Course, Professor, Student_Course
 from django.views.decorators.csrf import csrf_exempt
+from django.db.models import Count,Q
 
 # Create your views here.
 
@@ -103,3 +104,36 @@ def assign_student_to_course(request):
             return JsonResponse({"message":"Success..Student assigned to course successfully"})
         else:
             return JsonResponse({"error": "Invalid data"}, status=400)
+        
+@csrf_exempt
+def get_course_summary(request):
+    course = Course.objects.filter(id = request.POST.get('course_id')).first()
+
+
+    semester_year = request.POST.get('semester_year')
+    semester_number = request.POST.get('semester_number')  
+    enrollment = Student_Course.objects.filter(course = course, semester_year = semester_year, semester_number = semester_number)
+    stats = enrollment.aggregate(total_students  = Count('student', distinct = True),
+                                 grade_A = Count('id', filter= Q(grade = 'A')),
+                                 grade_B = Count('id', filter = Q(grade = 'B')),
+                                 grade_C = Count('id', filter = Q(grade = 'C')),
+                                 grade_D = Count('id', filter = Q(grade = 'D'))
+                                 )
+    stats["professor_name"] = course.professor.name
+    return JsonResponse(stats)
+
+@csrf_exempt
+def get_professor_summary(request):
+    professor = Professor.objects.filter(id = request.POST.get('professor_id')).first()
+    course = professor.course
+
+    enrollments = Student_Course.objects.filter(course = course)
+    stats = enrollments.values('semester_year','semester_number').annotate(total_students = Count('student',distinct=True),
+            grade_A = Count('id', filter = Q(grade ='A')),
+            grade_B = Count('id', filter = Q(grade = 'B')),
+            grade_C = Count('id', filter = Q(grade = 'C')),
+            grade_D = Count('id', filter = Q(grade = 'D')))
+    
+     
+    return JsonResponse(list(stats), safe=False)
+            

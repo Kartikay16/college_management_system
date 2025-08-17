@@ -8,6 +8,7 @@ urlpatterns = [
     path('set_grade',views.set_grade),
     path('get_student_summary',views.get_student_summary),
     path('assign_course_to_prof',views.assign_course_to_prof),
-    path('assign_student_to_course',views.assign_student_to_course)
-
+    path('assign_student_to_course',views.assign_student_to_course),
+    path('get_course_summary',views.get_course_summary),
+    path('get_professor_summary',views.get_professor_summary)
 ]
